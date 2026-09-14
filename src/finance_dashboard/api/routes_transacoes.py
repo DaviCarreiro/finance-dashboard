@@ -1,22 +1,23 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from finance_dashboard.db.session import get_db
 from finance_dashboard.models.transacao import Transacao
+from finance_dashboard.models.usuario import Usuario
 from finance_dashboard.schemas.transacao import TransacaoCreate, TransacaoRead
-from fastapi import HTTPException
+from finance_dashboard.core.security import obter_usuario_atual
 
 router = APIRouter()
 
 
 @router.get("/transacoes", response_model=list[TransacaoRead])
-def listar_transacoes(db: Session = Depends(get_db)):
+def listar_transacoes(db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     transacoes = db.query(Transacao).all()
     return transacoes
 
 
 @router.post("/transacoes", response_model=TransacaoRead)
-def criar_transacao(transacao: TransacaoCreate, db: Session = Depends(get_db)):
+def criar_transacao(transacao: TransacaoCreate, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     nova_transacao = Transacao(
         descricao=transacao.descricao,
         valor=transacao.valor,
@@ -28,30 +29,32 @@ def criar_transacao(transacao: TransacaoCreate, db: Session = Depends(get_db)):
     db.refresh(nova_transacao)
     return nova_transacao
 
+
 @router.put("/transacoes/{transacao_id}", response_model=TransacaoRead)
-def atualizar_transacao(transacao_id: int, dados: TransacaoCreate, db: Session = Depends(get_db)):
+def atualizar_transacao(transacao_id: int, dados: TransacaoCreate, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     transacao = db.query(Transacao).filter(Transacao.id == transacao_id).first()
-    
+
     if transacao is None:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
-    
+
     transacao.descricao = dados.descricao
     transacao.valor = dados.valor
     transacao.categoria_id = dados.categoria_id
     transacao.usuario_id = dados.usuario_id
-    
+
     db.commit()
     db.refresh(transacao)
     return transacao
 
+
 @router.delete("/transacoes/{transacao_id}")
-def deletar_transacao(transacao_id: int, db: Session = Depends(get_db)):
+def deletar_transacao(transacao_id: int, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     transacao = db.query(Transacao).filter(Transacao.id == transacao_id).first()
-    
+
     if transacao is None:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
 
     db.delete(transacao)
     db.commit()
-    
+
     return {"mensagem": "Transação deletada com sucesso"}

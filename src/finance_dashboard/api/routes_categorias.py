@@ -3,19 +3,21 @@ from sqlalchemy.orm import Session
 
 from finance_dashboard.db.session import get_db
 from finance_dashboard.models.categoria import Categoria
+from finance_dashboard.models.usuario import Usuario
 from finance_dashboard.schemas.categoria import CategoriaCreate, CategoriaRead
+from finance_dashboard.core.security import obter_usuario_atual
 
 router = APIRouter()
 
 
 @router.get("/categorias", response_model=list[CategoriaRead])
-def listar_categorias(db: Session = Depends(get_db)):
+def listar_categorias(db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     categorias = db.query(Categoria).all()
     return categorias
 
 
 @router.post("/categorias", response_model=CategoriaRead)
-def criar_categoria(categoria: CategoriaCreate, db: Session = Depends(get_db)):
+def criar_categoria(categoria: CategoriaCreate, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     nova_categoria = Categoria(nome=categoria.nome)
     db.add(nova_categoria)
     db.commit()
@@ -24,7 +26,7 @@ def criar_categoria(categoria: CategoriaCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/categorias/{categoria_id}", response_model=CategoriaRead)
-def atualizar_categoria(categoria_id: int, dados: CategoriaCreate, db: Session = Depends(get_db)):
+def atualizar_categoria(categoria_id: int, dados: CategoriaCreate, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
 
     if categoria is None:
@@ -38,7 +40,7 @@ def atualizar_categoria(categoria_id: int, dados: CategoriaCreate, db: Session =
 
 
 @router.delete("/categorias/{categoria_id}")
-def deletar_categoria(categoria_id: int, db: Session = Depends(get_db)):
+def deletar_categoria(categoria_id: int, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
 
     if categoria is None:

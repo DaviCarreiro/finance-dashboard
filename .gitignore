@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 finance_dashboard.db
 .env
+execute.txt

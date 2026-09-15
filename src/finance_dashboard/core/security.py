@@ -5,16 +5,19 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+import os
+from dotenv import load_dotenv
 
 from finance_dashboard.db.session import get_db
 from finance_dashboard.models.usuario import Usuario
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "uma-chave-secreta-temporaria-trocar-depois"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 EXPIRACAO_MINUTOS = 30
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 

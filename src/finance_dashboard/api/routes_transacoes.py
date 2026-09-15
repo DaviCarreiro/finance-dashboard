@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/transacoes", response_model=list[TransacaoRead])
 def listar_transacoes(db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
-    transacoes = db.query(Transacao).all()
+    transacoes = db.query(Transacao).filter(Transacao.usuario_id == usuario_atual.id).all()
     return transacoes
 
 
@@ -22,7 +22,7 @@ def criar_transacao(transacao: TransacaoCreate, db: Session = Depends(get_db), u
         descricao=transacao.descricao,
         valor=transacao.valor,
         categoria_id=transacao.categoria_id,
-        usuario_id=transacao.usuario_id,
+        usuario_id=usuario_atual.id,
     )
     db.add(nova_transacao)
     db.commit()
@@ -32,7 +32,10 @@ def criar_transacao(transacao: TransacaoCreate, db: Session = Depends(get_db), u
 
 @router.put("/transacoes/{transacao_id}", response_model=TransacaoRead)
 def atualizar_transacao(transacao_id: int, dados: TransacaoCreate, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
-    transacao = db.query(Transacao).filter(Transacao.id == transacao_id).first()
+    transacao = db.query(Transacao).filter(
+        Transacao.id == transacao_id,
+        Transacao.usuario_id == usuario_atual.id,
+    ).first()
 
     if transacao is None:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
@@ -40,7 +43,6 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoCreate, db: Session =
     transacao.descricao = dados.descricao
     transacao.valor = dados.valor
     transacao.categoria_id = dados.categoria_id
-    transacao.usuario_id = dados.usuario_id
 
     db.commit()
     db.refresh(transacao)
@@ -49,7 +51,10 @@ def atualizar_transacao(transacao_id: int, dados: TransacaoCreate, db: Session =
 
 @router.delete("/transacoes/{transacao_id}")
 def deletar_transacao(transacao_id: int, db: Session = Depends(get_db), usuario_atual: Usuario = Depends(obter_usuario_atual)):
-    transacao = db.query(Transacao).filter(Transacao.id == transacao_id).first()
+    transacao = db.query(Transacao).filter(
+        Transacao.id == transacao_id,
+        Transacao.usuario_id == usuario_atual.id,
+    ).first()
 
     if transacao is None:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
